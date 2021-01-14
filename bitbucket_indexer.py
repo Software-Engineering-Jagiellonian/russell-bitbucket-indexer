@@ -14,32 +14,41 @@ class BitBucketIndexer(Indexer):
                  database_parameters: DatabaseConnectionParameters, rejected_publish_delay: int,
                  config: BitBucketIndexerConfig):
         super().__init__(indexer_type, rabbitmq_parameters, database_parameters, rejected_publish_delay)
-        self.config = config
+        self.after = config.after
+        self.min_forks = config.min_forks
         self.next_page_url = config.next_page_url if config.next_page_url else self.BASE_API_URL
 
     def crawl_next_repository(self, prev_repository_id):
         params = {
             'pagelen': 1,
-            'after': self.config.after
+            'after': self.after
         }
 
         while True:
             self.log.debug('Start a new crawl')
 
             if not self.next_page_url:
-                # self.log.info('All repositories have been indexed')
                 return None
 
             response = requests.get(self.next_page_url, params=params)
-            if response.status_code != 200:
-                raise IndexerError('Response code other than 200!', 'Response: ' + response.text)
+            self.handle_repositories_response(response)
 
             json_response = response.json()
-            if len(json_response) < 1:
-                # self.log.info('No repository has been received')
+            if len(json_response['values']) < 1:
                 return None
 
             repository_data = json_response['values'][0]
+
+            if self.min_forks:
+                self.log.debug('Test repository forks')
+
+                forks_url = repository_data['links']['forks']['href']
+                forks_count = self.get_forks_count(forks_url)
+                if forks_count < self.min_forks:
+                    self.reject_repository('Repository rejected due to too small number of forks',
+                                           json_response.get('next', None))
+                    continue
+
             repository_id = repository_data['uuid']
             repo_url = repository_data['links']['html']['href']
             git_url = repository_data['links']['clone'][0]['href']
@@ -59,3 +68,28 @@ class BitBucketIndexer(Indexer):
             self.next_page_url = json_response.get('next', None)
 
             return crawled_repository
+
+    def get_forks_count(self, url):
+        params = {
+            'pagelen': self.min_forks,
+        }
+
+        response = requests.get(url, params=params)
+        if response.status_code != 200:
+            return 0
+
+        json_response = response.json()
+
+        return json_response.get('size', 0)
+
+    def reject_repository(self, message, next_url):
+        self.log.info(message)
+        self.next_page_url = next_url
+
+    @staticmethod
+    def handle_repositories_response(response):
+        if response.status_code != 200:
+            raise IndexerError('Response code other than 200!', 'Response: ' + response.text)
+
+
+

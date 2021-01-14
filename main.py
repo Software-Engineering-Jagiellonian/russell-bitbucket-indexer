@@ -17,7 +17,8 @@ if __name__ == '__main__':
                                             password=get_env_var('DB_PASSWORD'))
 
     bitbucket_config = BitBucketIndexerConfig(next_page_url=get_opt_env_var('NEXT_PAGE_URL'),
-                                              after=get_opt_env_var('AFTER'))
+                                              after=get_opt_env_var('AFTER'),
+                                              min_forks=int(get_opt_env_var('MIN_FORKS')))
 
     app = BitBucketIndexer(indexer_type=IndexerType.BITBUCKET,
                            rabbitmq_parameters=rabbit, database_parameters=database,
