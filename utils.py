@@ -18,3 +18,9 @@ def get_opt_env_var(name):
         return os.environ[name]
     except KeyError:
         return None
+
+
+def str_to_int(val):
+    if val:
+        return int(val)
+    return None

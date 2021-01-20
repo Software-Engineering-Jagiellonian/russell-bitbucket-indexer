@@ -1,5 +1,5 @@
 import os
-from utils import get_env_var, get_opt_env_var
+from utils import get_env_var, get_opt_env_var, str_to_int
 
 from fregeindexerlib import RabbitMQConnectionParameters, DatabaseConnectionParameters, IndexerType
 
@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     bitbucket_config = BitBucketIndexerConfig(next_page_url=get_opt_env_var('NEXT_PAGE_URL'),
                                               after=get_opt_env_var('AFTER'),
-                                              min_forks=int(get_opt_env_var('MIN_FORKS')))
+                                              min_forks=str_to_int(get_opt_env_var('MIN_FORKS')))
 
     app = BitBucketIndexer(indexer_type=IndexerType.BITBUCKET,
                            rabbitmq_parameters=rabbit, database_parameters=database,
