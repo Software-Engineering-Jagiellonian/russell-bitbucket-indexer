@@ -1,7 +1,7 @@
-# frege-bitbucket-indexer
+# russell-bitbucket-indexer
 Indexer of public repositories from Bitbucket.
 
-Docker image available as `jagiellonian/frege-bitbucket-indexer`.
+Docker image available as `jagiellonian/russell-bitbucket-indexer`.
 
 ## Docker environment variables
 
